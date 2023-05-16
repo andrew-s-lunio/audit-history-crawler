@@ -55,6 +55,7 @@ def aw_id_target(args):
 
 	return True
 
+
 def account_id_target(args):
 	prefix = f"timestamp/account_id={args.account_id}/"
 
@@ -78,6 +79,7 @@ def account_id_target(args):
 	df.to_csv(output_file_name, index=False)
 
 	return True
+
 
 def bucket_rip(prefix, bucket_name, folder_path, args):
 	try:
@@ -145,6 +147,7 @@ def process_gz_files(path):
 	combined_df = pd.concat(data_list, ignore_index=True)
 	return combined_df
 
+
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="Lunio Audit History Parser")
 	parser.add_argument(
@@ -178,5 +181,5 @@ if __name__ == "__main__":
 	else:
 		success = account_id_target(args)
 	
-	message = "End" if success else "An error occurred and the script failed to complete"
+	message = "Script finished without issue." if success else "An error occurred and the script failed to complete"
 	print(f"--- {message} ---")
