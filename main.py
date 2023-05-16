@@ -24,15 +24,15 @@ import gzip
 import pandas as pd
 import io
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
+bucket_name = "poc-audit-history-records"
+folder_path = "tmp"
 
 def aw_id_target(args):
-	bucket_name = "poc-audit-history-records"
-	folder_path = "tmp"
 	prefix = f"aw_id/account_id={args.account_id}/adwords_id={args.aw_id}"
 
-	success, client, objects = bucket_rip(prefix, bucket_name, folder_path)
+	success, client, objects = bucket_rip(prefix, bucket_name, folder_path, args)
 	if not success:
 		return False
 
@@ -46,7 +46,6 @@ def aw_id_target(args):
 	print("Download finished. Starting parsing data.")
 
 	df = process_gz_files(folder_path)
-	print(df)
 
 	if os.path.exists(folder_path):
 		shutil.rmtree(folder_path)
@@ -58,9 +57,30 @@ def aw_id_target(args):
 
 def account_id_target(args):
 	print("This ins't comeplete")
+	prefix = f"timestamp/account_id={args.account_id}/"
+
+	success, client, objects = bucket_rip(prefix, bucket_name, folder_path, args)
+	if not success:
+		return False
+
+	i = 0
+	for item in objects:
+		i += 1
+		local_file_path = f"{folder_path}/{item['Key'].replace('/', '-')}"
+		client.download_file(bucket_name, item['Key'], local_file_path)
+		print(f"Downloaded {i} of {len(objects)}.", end="\r")
+
+	df = process_gz_files(folder_path)
+
+	if os.path.exists(folder_path):
+		shutil.rmtree(folder_path)
+
+	output_file_name = f"{args.account_id}-{args.orig_timestamp}-{datetime.now()}.csv"
+	df.to_csv(output_file_name, index=False)
+
 	return True
 
-def bucket_rip(prefix, bucket_name, folder_path):
+def bucket_rip(prefix, bucket_name, folder_path, args):
 	try:
 		# Make sure user has boto3, otherwise provide a user friendly error message.
 		client = boto3.client("s3")
@@ -70,10 +90,25 @@ def bucket_rip(prefix, bucket_name, folder_path):
 		return False, None, None
 
 	try:
-		objects = client.list_objects_v2(
-			Bucket=bucket_name,
-			Prefix=prefix
-		)
+		paginator = client.get_paginator("list_objects_v2")
+		objects = []
+		if args.timestamp:
+			end_date = datetime.now()
+			while args.timestamp <= end_date:
+				args.timestamp += timedelta(days=1)
+				new_prefix = f"{prefix}date={args.timestamp.strftime('%Y-%m-%d')}/"
+				pages = paginator.paginate(Bucket=bucket_name, Prefix=new_prefix)
+				for page in pages:
+					if "Contents" in page.keys():
+						objects.append(page['Contents'])
+
+			objects = [item for sublist in objects for item in sublist]
+		else:
+			pages = paginator.paginate(Bucket=bucket_name, Prefix=prefix)
+			for page in pages:
+				if "Contents" in page.keys():
+					objects.append(page['Contents'])
+
 	except Exception as e:
 		print(e)
 		print("Error connecting to aws. Please make sure your credentials are up to date.")
@@ -112,7 +147,7 @@ def process_gz_files(path):
 	return combined_df
 
 if __name__ == "__main__":
-	parser = argparse.ArgumentParser(description="Jobs main code")
+	parser = argparse.ArgumentParser(description="Lunio Audit History Parser")
 	parser.add_argument(
 		"--account_id",
 		required=True,
@@ -124,7 +159,21 @@ if __name__ == "__main__":
 		help="Customer or campaign ID"
 	)
 
+	parser.add_argument(
+		"--timestamp",
+		help="Date (YYYY-MM-DD) of the oldest record you want to pull."
+	)
+
 	args = parser.parse_args()
+
+	if args.timestamp is None:
+		# If no timestamp is provided when required, set max date to 30 days ago.
+		args.timestamp = datetime.now() - timedelta(days=30)
+	else:
+		args.timestamp = datetime.strptime(args.timestamp, "%Y-%m-%d")
+
+	args.orig_timestamp = args.timestamp.strftime('%Y-%m-%d')
+
 	if args.aw_id is not None:
 		success = aw_id_target(args)
 	else:
