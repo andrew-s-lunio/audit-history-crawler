@@ -1,3 +1,20 @@
+"""
+Lunio Audit History S3 Bucket Data Processing
+
+This script retrieves files from the 'poc-audit-history-records' S3 bucket and processes the data into a readable CSV file.
+
+Usage:
+- Ensure that you have valid AWS credentials configured on your system.
+- Run the script with account_id parameter and aw_id parameter (optional) to process the files and generate a CSV file.
+
+Required Python Packages:
+- boto3
+- pandas
+
+Note:
+- This script assumes you have read only access to the bucket on production. Unknown errors may be thrown if not.
+
+"""
 
 import argparse
 import boto3
