@@ -56,7 +56,6 @@ def aw_id_target(args):
 	return True
 
 def account_id_target(args):
-	print("This ins't comeplete")
 	prefix = f"timestamp/account_id={args.account_id}/"
 
 	success, client, objects = bucket_rip(prefix, bucket_name, folder_path, args)
