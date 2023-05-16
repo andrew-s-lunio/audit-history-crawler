@@ -4,11 +4,11 @@ A lightweight and fast<sup>kind of</sup> method of pulling and reading Lunio acc
 **Table of Contents**
 
 
-###Requirements
+### Requirements
 1. Python (the script was written with version *3.9.16* but should be able to be run on higher versions).
 2. Production AWS access with permissions to read from the `poc-audit-history` bucket (read only minimum).
 
-###Usage
+### Usage
 First we need to install the required packages (this only needs to be done once). This can be done with the command:
 ```shell
 pip install -r requirements.txt
