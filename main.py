@@ -74,6 +74,8 @@ def account_id_target(args):
 		client.download_file(bucket_name, item['Key'], local_file_path)
 		print(f"Downloaded {i} of {len(objects)}.", end="\r")
 
+	print("Download finished. Starting parsing data.")
+
 	df = process_gz_files(folder_path)
 
 	if os.path.exists(folder_path):
