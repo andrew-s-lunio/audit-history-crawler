@@ -36,12 +36,16 @@ def aw_id_target(args):
 	if not success:
 		return False
 
+	if len(objects) == 0:
+		print("No items found for account_id and aw_id.")
+		return False
+
 	i = 0
-	for item in objects['Contents']:
+	for item in objects:
 		i += 1
 		local_file_path = f"{folder_path}/{item['Key'].split('/')[-1]}"
 		client.download_file(bucket_name, item['Key'], local_file_path)
-		print(f"Downloaded {i} of {len(objects['Contents'])}.", end="\r")
+		print(f"Downloaded {i} of {len(objects)}.", end="\r")
 
 	print("Download finished. Starting parsing data.")
 
@@ -93,7 +97,14 @@ def bucket_rip(prefix, bucket_name, folder_path, args):
 	try:
 		paginator = client.get_paginator("list_objects_v2")
 		objects = []
-		if args.timestamp:
+
+		if args.aw_id:
+			pages = paginator.paginate(Bucket=bucket_name, Prefix=prefix)
+			for page in pages:
+				print(page)
+				if "Contents" in page.keys():
+					objects.append(page['Contents'])
+		else:
 			end_date = datetime.now()
 			while args.timestamp <= end_date:
 				args.timestamp += timedelta(days=1)
@@ -103,12 +114,7 @@ def bucket_rip(prefix, bucket_name, folder_path, args):
 					if "Contents" in page.keys():
 						objects.append(page['Contents'])
 
-			objects = [item for sublist in objects for item in sublist]
-		else:
-			pages = paginator.paginate(Bucket=bucket_name, Prefix=prefix)
-			for page in pages:
-				if "Contents" in page.keys():
-					objects.append(page['Contents'])
+		objects = [item for sublist in objects for item in sublist]
 
 	except Exception as e:
 		print(e)
