@@ -20,4 +20,8 @@ Once the setup is complete, we should be able to run the file with the command:
 ```shell
 python main.py --account_id=<account_id> 
 ```
-If you are looking for a specific customer or campaign, include the paramater `--aw_id=<customer/campaign_id>` and that will give you the history specific to that customer or campaign.
+If you are looking for a specific customer or campaign, include the paramater `--aw_id=<customer/campaign_id>` and that will give you the history specific to that customer or campaign. For example:
+
+```shell
+python main.py --account_id=7430 --aw_id=1853585311857
+```
